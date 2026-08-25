@@ -780,7 +780,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cc5c234723e3a54d8dd09b131117743, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _meshType: 1
+  _meshType: 5
 --- !u!114 &112860169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -811,7 +811,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2609c54f376cffc4da1ab9401cc1a36f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _skeletonType: 1
+  _skeletonType: 5
   _updateRootPose: 0
   _updateRootScale: 1
   _enablePhysicsCapsules: 0
@@ -7858,6 +7858,62 @@ Transform:
   m_Children: []
   m_Father: {fileID: 741022945}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1322119837
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1322119839}
+  - component: {fileID: 1322119838}
+  m_Layer: 0
+  m_Name: AprilTagTrackingRight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1322119838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1322119837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80fdab38317772d479c27ffdbbf890c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraAccess: {fileID: 1673795671}
+  sourceId: 0
+  tagFamily: 0
+  tagSizeMetres: 0.04
+  detectionRate: 12
+  decimation: 1
+  requireFreshFrame: 1
+  fovDerivation: 0
+  rangeCalibrationScale: 0.5874083
+  detectorFrameEuler: {x: 0, y: 0, z: 0}
+  knownCalibrationDistance: 1
+  logRange: 0
+--- !u!4 &1322119839
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1322119837}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1325866018
 GameObject:
   m_ObjectHideFlags: 0
@@ -8430,7 +8486,7 @@ GameObject:
   - component: {fileID: 1392670285}
   - component: {fileID: 1392670284}
   m_Layer: 0
-  m_Name: AprilTagTracking
+  m_Name: AprilTagTrackingLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8451,7 +8507,7 @@ MonoBehaviour:
   cameraAccess: {fileID: 59405327}
   sourceId: 0
   tagFamily: 0
-  tagSizeMetres: 0.021
+  tagSizeMetres: 0.04
   detectionRate: 12
   decimation: 1
   requireFreshFrame: 1
@@ -9832,7 +9888,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cc5c234723e3a54d8dd09b131117743, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _meshType: 0
+  _meshType: 4
 --- !u!114 &1616850489
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9863,7 +9919,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2609c54f376cffc4da1ab9401cc1a36f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _skeletonType: 0
+  _skeletonType: 4
   _updateRootPose: 0
   _updateRootScale: 1
   _enablePhysicsCapsules: 0
@@ -10381,6 +10437,90 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2066991098}
   m_LocalEulerAnglesHint: {x: 30.599, y: 0, z: 0}
+--- !u!1001 &1673795670
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1748868316715821956, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1748868316715821956, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: CameraPosition
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1748868316715821956, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: RequestedResolution.x
+      value: 640
+      objectReference: {fileID: 0}
+    - target: {fileID: 1748868316715821956, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: RequestedResolution.y
+      value: 480
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047676844597515174, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7847449403238870662, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+      propertyPath: m_Name
+      value: PassthroughCameraAccessPrefabR
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+--- !u!114 &1673795671 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1748868316715821956, guid: abfaad578d05e4a09838223134c41c46, type: 3}
+  m_PrefabInstance: {fileID: 1673795670}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef9a7893e57c04c0db4114c70954b915, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1682302760
 GameObject:
   m_ObjectHideFlags: 0
@@ -12252,6 +12392,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2066991098}
   - component: {fileID: 2066991099}
+  - component: {fileID: 2066991100}
   m_Layer: 0
   m_Name: TrackedTagRoot
   m_TagString: Untagged
@@ -12289,7 +12430,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 929cabdbdbed61f48a56f1ae28550330, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  poseSourceBehaviour: {fileID: 1392670284}
+  poseSourceBehaviour: {fileID: 2066991100}
   tagId: 0
   referenceTag: {fileID: 1671735438}
   useBakedReference: 0
@@ -12304,6 +12445,32 @@ MonoBehaviour:
   rotationJumpLimit: 40
   outliersBeforeAccept: 4
   lostTimeout: 0.75
+--- !u!114 &2066991100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2066991097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78124b399415b3040b211eba26d5e1c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  leftSourceBehaviour: {fileID: 1392670284}
+  rightSourceBehaviour: {fileID: 1322119838}
+  maxCaptureSkewMs: 8
+  pairingTimeout: 0.05
+  minConvergenceAngleDeg: 0.3
+  maxResidualPerMetre: 0.02
+  maxSyncRotationErrorDeg: 0.5
+  maxRotationDisagreementDeg: 12
+  holdRotationOnDisagreement: 1
+  allowMonoFallback: 1
+  autoCalibrateRange: 1
+  calibrationBlend: 0.03
+  maxCalibrationCorrection: 0.25
+  logFusion: 0
 --- !u!1 &2081952322
 GameObject:
   m_ObjectHideFlags: 0
@@ -14982,8 +15149,10 @@ SceneRoots:
   - {fileID: 478312663}
   - {fileID: 8569894051434947678}
   - {fileID: 59405326}
+  - {fileID: 1673795670}
   - {fileID: 1006862205549914179}
   - {fileID: 336067256}
   - {fileID: 1159942710}
   - {fileID: 1392670285}
+  - {fileID: 1322119839}
   - {fileID: 2066991098}
