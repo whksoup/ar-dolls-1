@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3da872b8c7bc5164883b9327e9535d85, type: 3}
+  m_Name: Layout_V1
+  m_EditorClassIdentifier: 
+  entries:
+  - Path: Box
+    LocalPosition: {x: -0.0003, y: -0.0181, z: 0.0048}
+    LocalEulerAngles: {x: -0, y: 0, z: 0}
+    LocalScale: {x: 0.090930745, y: 0.10008155, z: 0.033971068}
+    ActiveSelf: 1
+  - Path: Jaw1
+    LocalPosition: {x: -0.0152, y: -0.0678, z: 0.0228}
+    LocalEulerAngles: {x: 355.78967, y: 1.5526029, z: 3.4622908}
+    LocalScale: {x: 0.021053562, y: 0.07000178, z: 0.0355653}
+    ActiveSelf: 1
+  - Path: Jaw1 (1)
+    LocalPosition: {x: 0.0255, y: -0.0625, z: 0.0213}
+    LocalEulerAngles: {x: -0, y: 0, z: 331.85}
+    LocalScale: {x: 0.021053562, y: 0.07000178, z: 0.0355653}
+    ActiveSelf: 1
+  - Path: Nose
+    LocalPosition: {x: -0.0017, y: 0.006, z: -0.0197}
+    LocalEulerAngles: {x: 57.03902, y: 1.827611, z: 1.008359}
+    LocalScale: {x: 0.018889, y: 0.04629316, z: 0.018889}
+    ActiveSelf: 1
+  capturedAt: 2026-08-26 23:30:36

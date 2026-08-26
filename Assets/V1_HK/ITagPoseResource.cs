@@ -35,7 +35,19 @@ public readonly struct TagObservation
 
     /// <summary>Identifies which camera produced this. 0 = left, 1 = right by convention.</summary>
     public readonly int SourceId;
-    //
+
+    /// <summary>
+    /// True when the producer knew this specific tag's physical size — i.e. the
+    /// range is metrically meaningful rather than derived from a default.
+    ///
+    /// This exists because range is exactly linear in the assumed tag size. A
+    /// stage that learns a per-camera range correction (see
+    /// <c>StereoTagFusion.autoCalibrateRange</c>) must not learn from a tag whose
+    /// size was guessed, or it will fold a tag-size error into what is supposed
+    /// to be an optics correction and then apply it to every other tag.
+    /// </summary>
+    public readonly bool SizeCalibrated;
+
     public TagObservation(
         int id,
         UnityPose worldPose,
@@ -43,7 +55,8 @@ public readonly struct TagObservation
         UnityPose cameraPose,
         DateTime captureTime,
         float publishTime,
-        int sourceId)
+        int sourceId,
+        bool sizeCalibrated = false)
     {
         Id = id;
         WorldPose = worldPose;
@@ -52,6 +65,7 @@ public readonly struct TagObservation
         CaptureTime = captureTime;
         PublishTime = publishTime;
         SourceId = sourceId;
+        SizeCalibrated = sizeCalibrated;
     }
 
     /// <summary>Unit bearing from the camera to the tag origin, in world space. Independent of range calibration.</summary>
@@ -63,8 +77,9 @@ public readonly struct TagObservation
 }
 
 /// <summary>
-/// Anything that produces tag observations: a single-camera detector, or a
-/// stereo fusion node that consumes two detectors and emits one better pose.
+/// Anything that produces tag observations: a single-camera detector, a stereo
+/// fusion node that consumes two detectors and emits one better pose, or a
+/// constellation node that consumes several tag ids and emits one rig pose.
 /// Consumers bind to this rather than to a concrete tracker.
 /// </summary>
 public interface ITagPoseSource

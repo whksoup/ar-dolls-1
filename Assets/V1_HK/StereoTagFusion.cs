@@ -27,6 +27,18 @@ using UnityPose = UnityEngine.Pose;
 /// Emitted observations carry SourceId = <see cref="FusedSourceId"/> when the
 /// pose was triangulated, and the originating camera's SourceId when it came
 /// from the monocular fallback path.
+///
+/// Multi-tag: every gate, every piece of history and every diagnostic is keyed
+/// by tag id. The per-tag cost of triangulation is a dozen dot products, so the
+/// number of tags in view is not a meaningful compute concern here — the cost
+/// lives upstream, in the detectors.
+///
+/// The one genuinely shared quantity is <see cref="rangeCorrection"/>, and that
+/// is correct: it is a property of the camera's optics, not of any tag. It is
+/// only learned from observations flagged <see cref="TagObservation.SizeCalibrated"/>,
+/// because a tag of unknown size produces a range error indistinguishable from
+/// a focal-length error, and folding one into the other would then corrupt
+/// every other tag.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(100)] // after the trackers' Update, before any LateUpdate consumer
@@ -37,6 +49,34 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
 
     /// <inheritdoc />
     public event Action<TagObservation> TagObserved;
+
+    /// <summary>Everything the fusion stage remembers about one tag id.</summary>
+    public struct TagState
+    {
+        public Quaternion TrustedRotation;
+        public bool HasTrustedRotation;
+
+        public float LastResidual;
+        public float LastConvergenceAngle;
+        public float LastRotationDisagreement;
+        public bool IsStereo;
+        public float LastEmitTime;
+    }
+
+    /// <summary>An observation waiting for its partner, plus when the wait started.</summary>
+    private struct Pending
+    {
+        public TagObservation Observation;
+
+        /// <summary>
+        /// When this id first landed in this slot. The timeout is measured from
+        /// here rather than from the observation's own PublishTime: a superseding
+        /// sighting refreshes the observation but must not refresh the deadline,
+        /// or a pair that keeps failing a gate at a detection rate faster than
+        /// the timeout never retires, and the mono fallback silently starves.
+        /// </summary>
+        public float FirstSeenTime;
+    }
 
     [Header("Sources")]
     [Tooltip("Tracker for the left camera. Any ITagPoseSource.")]
@@ -60,7 +100,8 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     [Tooltip(
         "How long an unpaired observation waits for its partner before being " +
         "emitted through the monocular path. Lower = less latency when only " +
-        "one camera can see the tag, but more missed pairings."
+        "one camera can see the tag, but more missed pairings. Measured from " +
+        "when the id first entered the queue, not from the newest sighting."
     )]
     [SerializeField]
     private float pairingTimeout = 0.05f;
@@ -116,6 +157,15 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     [SerializeField]
     private bool autoCalibrateRange = true;
 
+    [Tooltip(
+        "Only learn from tags whose physical size is actually known. Leave on " +
+        "for any rig with more than one tag size, or where some ids are " +
+        "unprofiled — otherwise a tag-size error is learned as an optics error " +
+        "and applied to every other tag."
+    )]
+    [SerializeField]
+    private bool requireSizeCalibratedForLearning = true;
+
     [Tooltip("Blend weight per stereo sample. Small = slow, stable convergence.")]
     [SerializeField, Range(0.001f, 1f)]
     private float calibrationBlend = 0.03f;
@@ -123,6 +173,15 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     [Tooltip("Clamp on the learned correction. 0.25 = accept at most +/-25%.")]
     [SerializeField]
     private float maxCalibrationCorrection = 0.25f;
+
+    [Header("State retention")]
+    [Tooltip(
+        "Drop a tag's remembered state after this long without a sighting. " +
+        "Chiefly stops holdRotationOnDisagreement from resurrecting a rotation " +
+        "that was trusted minutes ago and is now meaningless."
+    )]
+    [SerializeField]
+    private float stateRetention = 10f;
 
     [Header("Diagnostics")]
     [SerializeField]
@@ -135,15 +194,19 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     private Action<TagObservation> rightHandler;
 
     // Pending observations awaiting a partner, keyed by tag id, one dict per slot.
-    private readonly Dictionary<int, TagObservation>[] pending =
+    private readonly Dictionary<int, Pending>[] pending =
     {
-        new Dictionary<int, TagObservation>(),
-        new Dictionary<int, TagObservation>()
+        new Dictionary<int, Pending>(),
+        new Dictionary<int, Pending>()
     };
 
-    // Last rotation we were willing to believe, per tag.
-    private readonly Dictionary<int, Quaternion> trustedRotation =
-        new Dictionary<int, Quaternion>();
+    // Ids whose pair was already evaluated and rejected. Cleared the moment
+    // either slot receives fresh data, so we never re-run TryFuse on inputs we
+    // have already judged.
+    private readonly HashSet<int> rejectedPairs = new HashSet<int>();
+
+    // Everything remembered per tag: trusted rotation plus diagnostics.
+    private readonly Dictionary<int, TagState> tagStates = new Dictionary<int, TagState>();
 
     private readonly float[] rangeCorrection = { 1f, 1f };
     private readonly bool[] hasRangeCorrection = { false, false };
@@ -154,18 +217,35 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     private readonly float[] headAngularSpeed = new float[2];
 
     private readonly List<int> scratchIds = new List<int>();
+    private readonly List<int> scratchExpired = new List<int>();
 
-    /// <summary>Ray closest-approach distance of the last accepted pair, in metres.</summary>
-    public float LastResidual { get; private set; }
+    private int lastEmittedId = -1;
+    private float nextPruneTime;
 
-    /// <summary>Angle between the two bearings on the last accepted pair, in degrees.</summary>
-    public float LastConvergenceAngle { get; private set; }
+    /// <summary>Id of the most recent emission. Use the per-id accessors when several tags are live.</summary>
+    public int LastEmittedId => lastEmittedId;
 
-    /// <summary>Rotation disagreement on the last evaluated pair, in degrees.</summary>
-    public float LastRotationDisagreement { get; private set; }
+    /// <summary>Ray closest-approach distance of the last accepted pair for the last emitted tag, in metres.</summary>
+    public float LastResidual => GetState(lastEmittedId).LastResidual;
 
-    /// <summary>True while the last emission for any tag came from triangulation.</summary>
-    public bool IsStereo { get; private set; }
+    /// <summary>Angle between the two bearings on the last accepted pair for the last emitted tag, in degrees.</summary>
+    public float LastConvergenceAngle => GetState(lastEmittedId).LastConvergenceAngle;
+
+    /// <summary>Rotation disagreement on the last evaluated pair for the last emitted tag, in degrees.</summary>
+    public float LastRotationDisagreement => GetState(lastEmittedId).LastRotationDisagreement;
+
+    /// <summary>True while the last emission for the last emitted tag came from triangulation.</summary>
+    public bool IsStereo => GetState(lastEmittedId).IsStereo;
+
+    /// <summary>Per-tag equivalent of <see cref="IsStereo"/>. Prefer this when tracking several tags.</summary>
+    public bool IsStereoFor(int id) => GetState(id).IsStereo;
+
+    /// <summary>Everything remembered about one tag. Default-valued if the tag is unknown.</summary>
+    public TagState GetState(int id) =>
+        id >= 0 && tagStates.TryGetValue(id, out TagState state) ? state : default;
+
+    /// <summary>Ids the fusion stage currently holds state for.</summary>
+    public IEnumerable<int> TrackedIds => tagStates.Keys;
 
     /// <summary>Learned range correction for a camera slot. 0 = left, 1 = right.</summary>
     public float GetRangeCorrection(int slot) =>
@@ -219,9 +299,10 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
 
         pending[0].Clear();
         pending[1].Clear();
+        rejectedPairs.Clear();
     }
 
-    /// <summary>Forget the learned range corrections and rotation history.</summary>
+    /// <summary>Forget the learned range corrections and all per-tag history.</summary>
     [ContextMenu("Reset Calibration")]
     public void ResetCalibration()
     {
@@ -229,15 +310,33 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
         rangeCorrection[1] = 1f;
         hasRangeCorrection[0] = false;
         hasRangeCorrection[1] = false;
-        trustedRotation.Clear();
+        tagStates.Clear();
+        lastEmittedId = -1;
     }
 
     private void OnObserved(int slot, TagObservation observation)
     {
         UpdateHeadAngularSpeed(slot, observation);
 
-        // A newer sighting supersedes an older unpaired one for the same tag.
-        pending[slot][observation.Id] = observation;
+        // A newer sighting supersedes an older unpaired one for the same tag,
+        // but does NOT reset the pairing deadline.
+        if (pending[slot].TryGetValue(observation.Id, out Pending entry))
+        {
+            entry.Observation = observation;
+        }
+        else
+        {
+            entry = new Pending
+            {
+                Observation = observation,
+                FirstSeenTime = observation.PublishTime
+            };
+        }
+
+        pending[slot][observation.Id] = entry;
+
+        // Fresh data for this id: any earlier verdict on its pair is stale.
+        rejectedPairs.Remove(observation.Id);
     }
 
     private void UpdateHeadAngularSpeed(int slot, in TagObservation observation)
@@ -267,22 +366,26 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
 
         ProcessPairs();
         ProcessTimeouts();
+        PruneStaleState();
     }
 
     private void ProcessPairs()
     {
+        if (pending[0].Count == 0 || pending[1].Count == 0)
+            return;
+
         scratchIds.Clear();
 
         foreach (int id in pending[0].Keys)
         {
-            if (pending[1].ContainsKey(id))
+            if (pending[1].ContainsKey(id) && !rejectedPairs.Contains(id))
                 scratchIds.Add(id);
         }
 
         foreach (int id in scratchIds)
         {
-            TagObservation a = pending[0][id];
-            TagObservation b = pending[1][id];
+            TagObservation a = pending[0][id].Observation;
+            TagObservation b = pending[1][id].Observation;
 
             if (TryFuse(a, b, out UnityPose fused))
             {
@@ -292,9 +395,10 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
             }
             else
             {
-                // Pair rejected. Let both fall through to the timeout path so
-                // the mono fallback still gets a chance rather than stalling.
-                // Nothing to do here — ProcessTimeouts handles them.
+                // Pair rejected. Remember that, so we do not re-evaluate the
+                // same two observations every frame, and let both fall through
+                // to the timeout path so the mono fallback still gets a chance.
+                rejectedPairs.Add(id);
             }
         }
     }
@@ -316,9 +420,9 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
 
         for (int slot = 0; slot < 2; slot++)
         {
-            foreach (KeyValuePair<int, TagObservation> entry in pending[slot])
+            foreach (KeyValuePair<int, Pending> entry in pending[slot])
             {
-                if (now - entry.Value.PublishTime >= pairingTimeout &&
+                if (now - entry.Value.FirstSeenTime >= pairingTimeout &&
                     !scratchIds.Contains(entry.Key))
                 {
                     scratchIds.Add(entry.Key);
@@ -328,14 +432,18 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
 
         foreach (int id in scratchIds)
         {
-            bool hasLeft = pending[0].TryGetValue(id, out TagObservation left);
-            bool hasRight = pending[1].TryGetValue(id, out TagObservation right);
+            bool hasLeft = pending[0].TryGetValue(id, out Pending leftEntry);
+            bool hasRight = pending[1].TryGetValue(id, out Pending rightEntry);
 
             pending[0].Remove(id);
             pending[1].Remove(id);
+            rejectedPairs.Remove(id);
 
             if (!allowMonoFallback || (!hasLeft && !hasRight))
                 continue;
+
+            TagObservation left = leftEntry.Observation;
+            TagObservation right = rightEntry.Observation;
 
             // Both present means the pair was rejected by a gate. Prefer the
             // camera whose view is better conditioned for rotation.
@@ -362,6 +470,32 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
                 chosen.SourceId
             );
         }
+    }
+
+    /// <summary>
+    /// Drops per-tag state for tags nobody has seen in a while. Bounded work,
+    /// run about once a second.
+    /// </summary>
+    private void PruneStaleState()
+    {
+        if (tagStates.Count == 0 || Time.unscaledTime < nextPruneTime)
+            return;
+
+        nextPruneTime = Time.unscaledTime + 1f;
+
+        if (stateRetention <= 0f)
+            return;
+
+        scratchExpired.Clear();
+
+        foreach (KeyValuePair<int, TagState> entry in tagStates)
+        {
+            if (Time.unscaledTime - entry.Value.LastEmitTime > stateRetention)
+                scratchExpired.Add(entry.Key);
+        }
+
+        foreach (int id in scratchExpired)
+            tagStates.Remove(id);
     }
 
     /// <summary>
@@ -431,18 +565,24 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
             b.WorldPose.rotation
         );
 
-        LastRotationDisagreement = disagreement;
+        TagState state = GetState(a.Id);
+        state.LastRotationDisagreement = disagreement;
+        tagStates[a.Id] = state;
 
         if (!TryResolveRotation(a, b, disagreement, out Quaternion rotation))
             return false;
 
         // --- Accept ---------------------------------------------------------
-        LastResidual = residual;
-        LastConvergenceAngle = convergence;
+        state = GetState(a.Id);
+        state.LastResidual = residual;
+        state.LastConvergenceAngle = convergence;
+        state.LastRotationDisagreement = disagreement;
+        state.TrustedRotation = rotation;
+        state.HasTrustedRotation = true;
+        tagStates[a.Id] = state;
 
-        trustedRotation[a.Id] = rotation;
-
-        if (autoCalibrateRange)
+        if (autoCalibrateRange &&
+            (!requireSizeCalibratedForLearning || (a.SizeCalibrated && b.SizeCalibrated)))
         {
             UpdateRangeCorrection(0, a, s);
             UpdateRangeCorrection(1, b, t);
@@ -456,7 +596,8 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
                 $"convergence {convergence:F2} deg, " +
                 $"rot disagreement {disagreement:F1} deg, " +
                 $"skew {skewSeconds * 1000f:F2} ms, " +
-                $"corr L {rangeCorrection[0]:F4} R {rangeCorrection[1]:F4}",
+                $"corr L {rangeCorrection[0]:F4} R {rangeCorrection[1]:F4}" +
+                (a.SizeCalibrated && b.SizeCalibrated ? string.Empty : ", size assumed"),
                 this
             );
         }
@@ -478,10 +619,11 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     {
         if (disagreement > maxRotationDisagreementDeg)
         {
-            if (holdRotationOnDisagreement &&
-                trustedRotation.TryGetValue(a.Id, out Quaternion held))
+            TagState state = GetState(a.Id);
+
+            if (holdRotationOnDisagreement && state.HasTrustedRotation)
             {
-                rotation = held;
+                rotation = state.TrustedRotation;
                 return true;
             }
 
@@ -573,7 +715,12 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     /// </summary>
     private void Emit(in UnityPose worldPose, in TagObservation reference, int sourceId)
     {
-        IsStereo = sourceId == FusedSourceId;
+        TagState state = GetState(reference.Id);
+        state.IsStereo = sourceId == FusedSourceId;
+        state.LastEmitTime = Time.unscaledTime;
+        tagStates[reference.Id] = state;
+
+        lastEmittedId = reference.Id;
 
         Quaternion inverseCameraRotation =
             Quaternion.Inverse(reference.CameraPose.rotation);
@@ -591,7 +738,8 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
                 reference.CameraPose,
                 reference.CaptureTime,
                 Time.unscaledTime,
-                sourceId
+                sourceId,
+                reference.SizeCalibrated
             )
         );
     }
@@ -599,17 +747,34 @@ public sealed class StereoTagFusion : MonoBehaviour, ITagPoseSource
     [ContextMenu("Log State")]
     private void LogState()
     {
-        Debug.Log(
-            $"Stereo: {IsStereo}\n" +
-            $"Last residual        = {LastResidual * 1000f:F2} mm\n" +
-            $"Last convergence     = {LastConvergenceAngle:F3} deg\n" +
-            $"Last rot disagreement= {LastRotationDisagreement:F2} deg\n" +
-            $"Range correction L   = {rangeCorrection[0]:F4} " +
-            $"({(rangeCorrection[0] - 1f) * 100f:F2}%)\n" +
-            $"Range correction R   = {rangeCorrection[1]:F4} " +
-            $"({(rangeCorrection[1] - 1f) * 100f:F2}%)\n" +
-            $"Head angular speed   = L {headAngularSpeed[0]:F1} / R {headAngularSpeed[1]:F1} deg/s",
-            this
+        var builder = new System.Text.StringBuilder();
+
+        builder.AppendLine(
+            $"Range correction L = {rangeCorrection[0]:F4} " +
+            $"({(rangeCorrection[0] - 1f) * 100f:F2}%), " +
+            $"R = {rangeCorrection[1]:F4} " +
+            $"({(rangeCorrection[1] - 1f) * 100f:F2}%)"
         );
+
+        builder.AppendLine(
+            $"Head angular speed = L {headAngularSpeed[0]:F1} / R {headAngularSpeed[1]:F1} deg/s"
+        );
+
+        builder.AppendLine($"Tracked ids: {tagStates.Count}");
+
+        foreach (KeyValuePair<int, TagState> entry in tagStates)
+        {
+            TagState state = entry.Value;
+
+            builder.AppendLine(
+                $"  id {entry.Key}: {(state.IsStereo ? "stereo" : "mono")}, " +
+                $"residual {state.LastResidual * 1000f:F2} mm, " +
+                $"convergence {state.LastConvergenceAngle:F3} deg, " +
+                $"rot disagreement {state.LastRotationDisagreement:F2} deg, " +
+                $"age {Time.unscaledTime - state.LastEmitTime:F2} s"
+            );
+        }
+
+        Debug.Log(builder.ToString(), this);
     }
 }
