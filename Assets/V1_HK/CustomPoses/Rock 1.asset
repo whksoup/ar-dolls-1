@@ -1,0 +1,225 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d643865e83db7744895c1775c0e3ad38, type: 3}
+  m_Name: Rock 1
+  m_EditorClassIdentifier: 
+  key: Rock
+  recordedHandedness: 1
+  matchesEitherHand: 0
+  constraints:
+  - Enabled: 1
+    Finger: 0
+    Feature: 0
+    Min: 164.70428
+    Max: 187.48637
+    Mean: 176.91298
+    StandardDeviation: 2.392943
+    ObservedMin: 171.88312
+    ObservedMax: 180.30754
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 0
+    Feature: 1
+    Min: 130.34395
+    Max: 155.45583
+    Mean: 139.2743
+    StandardDeviation: 2.0589325
+    ObservedMin: 136.52075
+    ObservedMax: 149.27902
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 0
+    Feature: 2
+    Min: 18.041561
+    Max: 88.89664
+    Mean: 51.234722
+    StandardDeviation: 7.0719566
+    ObservedMin: 39.25743
+    ObservedMax: 67.68077
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 0
+    Feature: 3
+    Min: -0.004
+    Max: 0.004
+    Mean: 0
+    StandardDeviation: 0
+    ObservedMin: 0
+    ObservedMax: 0
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 1
+    Feature: 0
+    Min: 175.6826
+    Max: 191.2127
+    Mean: 182.7404
+    StandardDeviation: 1.3224809
+    ObservedMin: 179.65004
+    ObservedMax: 187.24527
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 1
+    Feature: 1
+    Min: 166.44977
+    Max: 238.01953
+    Mean: 201.61981
+    StandardDeviation: 6.6591177
+    ObservedMin: 186.42712
+    ObservedMax: 218.04218
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 1
+    Feature: 2
+    Min: 77.91661
+    Max: 151.55885
+    Mean: 117.502304
+    StandardDeviation: 6.548066
+    ObservedMin: 97.56081
+    ObservedMax: 131.91466
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 1
+    Feature: 3
+    Min: 0.054813124
+    Max: 0.14354393
+    Mean: 0.09733371
+    StandardDeviation: 0.008970293
+    ObservedMin: 0.081724
+    ObservedMax: 0.11663304
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 2
+    Feature: 0
+    Min: 217.11385
+    Max: 254.77443
+    Mean: 244.17407
+    StandardDeviation: 2.848341
+    ObservedMin: 225.65887
+    ObservedMax: 246.2294
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 2
+    Feature: 1
+    Min: 243.17606
+    Max: 275.00754
+    Mean: 264.31787
+    StandardDeviation: 2.6764858
+    ObservedMin: 251.2055
+    ObservedMax: 266.9781
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 2
+    Feature: 2
+    Min: 6.0822773
+    Max: 20.25119
+    Mean: 15.128837
+    StandardDeviation: 1.1895367
+    ObservedMin: 9.6508875
+    ObservedMax: 16.68258
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 2
+    Feature: 3
+    Min: 0.07388592
+    Max: 0.10307718
+    Mean: 0.088718
+    StandardDeviation: 0.0027839364
+    ObservedMin: 0.08223773
+    ObservedMax: 0.09472537
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 3
+    Feature: 0
+    Min: 213.37535
+    Max: 252.94804
+    Mean: 241.589
+    StandardDeviation: 3.0079198
+    ObservedMin: 222.39911
+    ObservedMax: 243.92429
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 3
+    Feature: 1
+    Min: 251.4116
+    Max: 280.32794
+    Mean: 270.5248
+    StandardDeviation: 2.3306422
+    ObservedMin: 258.40353
+    ObservedMax: 273.33603
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 3
+    Feature: 2
+    Min: 62.573196
+    Max: 128.98785
+    Mean: 103.94103
+    StandardDeviation: 5.7244163
+    ObservedMin: 79.746445
+    ObservedMax: 111.81461
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 3
+    Feature: 3
+    Min: 0.08500574
+    Max: 0.11873446
+    Mean: 0.10329398
+    StandardDeviation: 0.002954707
+    ObservedMin: 0.09386986
+    ObservedMax: 0.10987034
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 4
+    Feature: 0
+    Min: 179.57579
+    Max: 188.62288
+    Mean: 183.97029
+    StandardDeviation: 0.90003115
+    ObservedMin: 182.27588
+    ObservedMax: 185.92279
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 4
+    Feature: 1
+    Min: 188.78284
+    Max: 246.3736
+    Mean: 214.95168
+    StandardDeviation: 6.1486526
+    ObservedMin: 207.22879
+    ObservedMax: 227.92764
+    SampleCount: 335
+  - Enabled: 1
+    Finger: 4
+    Feature: 2
+    Min: -2.5
+    Max: 2.5
+    Mean: 0
+    StandardDeviation: 0
+    ObservedMin: 0
+    ObservedMax: 0
+    SampleCount: 335
+  - Enabled: 0
+    Finger: 4
+    Feature: 3
+    Min: 0.077066466
+    Max: 0.18713751
+    Mean: 0.12949248
+    StandardDeviation: 0.01133761
+    ObservedMin: 0.1110793
+    ObservedMax: 0.15312468
+    SampleCount: 335
+  requiredConfidence: 0.25
+  toleranceScale: 1
+  exitToleranceMultiplier: 1.35
+  beginHoldSeconds: 0.08
+  endHoldSeconds: 0.06
+  requireHighConfidenceTracking: 0
+  recordedAt: 2026-08-29 02:38:17

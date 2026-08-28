@@ -17,8 +17,8 @@ MonoBehaviour:
     ParentPath: 
     SpawnKey: 
     SiblingIndex: 0
-    LocalPosition: {x: -0.0013, y: 0.0063, z: 0.0288}
-    LocalEulerAngles: {x: 59.416103, y: 0.00001364885, z: -0.0000010590563}
+    LocalPosition: {x: 0, y: -0.0154, z: 0.0232}
+    LocalEulerAngles: {x: 21.166409, y: 205.27713, z: 196.95328}
     LocalScale: {x: 0.057325467, y: 0.06912032, z: 0.04627132}
     ActiveSelf: 1
     Components: []
@@ -27,11 +27,20 @@ MonoBehaviour:
     SpawnKey: 
     SiblingIndex: 1
     LocalPosition: {x: -0.0267, y: -0.0104, z: 0.024}
-    LocalEulerAngles: {x: 54.21561, y: 6.608898, z: 5.9120197}
+    LocalEulerAngles: {x: 54.21563, y: 6.6089015, z: 5.9120207}
     LocalScale: {x: 0.008496586, y: 0.07000178, z: 0.0355653}
     ActiveSelf: 1
     Components:
     - TypeName: TransformMirror, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
       Json: '{"MirrorAcross":1,"IncludeCombinations":true,"NegateScale":false,"MirrorActiveState":true,"CopyPropertyBlocks":false}'
-  capturedAt: 2026-08-27 00:09:09
+  - Path: Cylinder
+    ParentPath: 
+    SpawnKey: 
+    SiblingIndex: 2
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 335.30124, y: 359.88077, z: 0.30605942}
+    LocalScale: {x: 0.039798435, y: 0.039798435, z: 0.039798435}
+    ActiveSelf: 1
+    Components: []
+  capturedAt: 2026-08-28 23:26:18
